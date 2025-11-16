@@ -1,6 +1,8 @@
-'use client'
+ 'use client'
 
-import { useEffect, useState } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Header from '@/components/Header'
@@ -11,7 +13,7 @@ import PricingSection from '@/components/PricingSection'
 import type { AIAnalysisResult } from '@/lib/openai'
 import type { BillingInterval, PlanId } from '@/lib/stripe'
 
-export default function ScanPage() {
+function ScanPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -318,3 +320,16 @@ export default function ScanPage() {
   )
 }
 
+export default function ScanPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      }
+    >
+      <ScanPageInner />
+    </Suspense>
+  )
+}
