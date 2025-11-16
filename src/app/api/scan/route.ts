@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         {
           error:
             error.message ||
-            'We couldn't load this website. Please check the URL and try again.',
+            "We couldn't load this website. Please check the URL and try again.",
         },
         { status: 400 }
       )
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'We couldn't analyze this site right now. Please try again later.',
+            "We couldn't analyze this site right now. Please try again later.",
         },
         { status: 500 }
       )
