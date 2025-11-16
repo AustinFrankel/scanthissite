@@ -1,10 +1,10 @@
-'use client'
+ 'use client'
 
 import { useState } from 'react'
-import { PLANS, type BillingInterval } from '@/lib/stripe'
+import { PLANS, type BillingInterval, type PlanId } from '@/lib/stripe'
 
 interface PricingSectionProps {
-  onSelectPlan: (planId: string, interval: BillingInterval) => void
+  onSelectPlan: (planId: PlanId, interval: BillingInterval) => void
 }
 
 export default function PricingSection({ onSelectPlan }: PricingSectionProps) {
