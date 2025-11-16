@@ -9,7 +9,7 @@ import ScanResultView from '@/components/ScanResultView'
 import SitePreviewFrame from '@/components/SitePreviewFrame'
 import PricingSection from '@/components/PricingSection'
 import type { AIAnalysisResult } from '@/lib/openai'
-import type { BillingInterval } from '@/lib/stripe'
+import type { BillingInterval, PlanId } from '@/lib/stripe'
 
 export default function ScanPage() {
   const router = useRouter()
@@ -134,25 +134,53 @@ export default function ScanPage() {
     }
   }
 
-  const handleSelectPlan = async (
-    planId: string,
-    interval: BillingInterval
-  ) => {
+  const handleSelectPlan = async (planId: PlanId, interval: BillingInterval) => {
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    setError('')
+
+    // Since Stripe is not configured yet, we simulate an active subscription
+    // by directly creating/updating a subscription row in Supabase.
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId, billingInterval: interval }),
-      })
-
-      const data = await response.json()
-
-      if (data.url) {
-        window.location.href = data.url
+      const now = new Date()
+      const periodStart = now.toISOString()
+      const periodEndDate = new Date(now)
+      if (interval === 'year') {
+        periodEndDate.setFullYear(periodEndDate.getFullYear() + 1)
+      } else {
+        periodEndDate.setMonth(periodEndDate.getMonth() + 1)
       }
+      const periodEnd = periodEndDate.toISOString()
+
+      const { error: upsertError } = await supabase
+        .from('subscriptions')
+        .upsert(
+          {
+            user_id: user.id,
+            plan_id: planId,
+            stripe_customer_id: null,
+            stripe_subscription_id: null,
+            status: 'active',
+            billing_interval: interval,
+            current_period_start: periodStart,
+            current_period_end: periodEnd,
+          },
+          { onConflict: 'user_id' }
+        )
+
+      if (upsertError) {
+        console.error('Error creating local subscription:', upsertError)
+        setError('Failed to activate plan. Please try again.')
+        return
+      }
+
+      setHasSubscription(true)
     } catch (err) {
-      console.error('Error creating checkout session:', err)
-      setError('Failed to start checkout')
+      console.error('Error creating local subscription:', err)
+      setError('Failed to activate plan. Please try again.')
     }
   }
 
